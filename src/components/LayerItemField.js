@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
-import { Field } from "../Field";
-import { useFieldEvent, useCall } from "../../hooks";
+import { Field } from "./Field";
+import { useFieldEvent, useCall } from "../hooks";
 
 export const LayerItemField = (props) => {
   const { value, children, onChange = () => {} } = props;

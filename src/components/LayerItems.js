@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useMutable, useOnce } from "../hooks";
 import { Flex } from "./Flex";
 import { Tree } from "./Tree";
-import { LayerItem } from "./layer";
+import { LayerItem } from "./LayerItem";
 import { moveObject } from "../core";
 
 export const Layer = (props) => {
-  const { onClick, objectTree } = props;
+  const { onClick, objectTree, forceUpdate } = props;
 
   // useOnce(() => sortObject(objectTree));
 
@@ -51,7 +51,7 @@ export const Layer = (props) => {
       cache.hovered = null;
       setHovered(null);
       if (!grabbed || !hovered || grabbed === hovered) return;
-      moveObject(objectTree, grabbed, hovered);
+      moveObject(objectTree, grabbed, hovered, forceUpdate);
     },
     clickIcon(obj) {
       if (obj.active) onClick();

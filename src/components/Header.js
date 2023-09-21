@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Flex } from "./Flex";
-import { LayerItemIcon } from "./layer/LayerItemIcon";
-import { LayerItemField } from "./layer/LayerItemField";
+import { LayerItemIcon } from "./LayerItemIcon";
+import { LayerItemField } from "./LayerItemField";
 
 export const Header = (props) => {
   const { children, onClick, onDelete } = props;

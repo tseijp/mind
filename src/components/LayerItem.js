@@ -1,11 +1,11 @@
 import * as React from "react";
-import { Flex } from "../Flex";
+import { Flex } from "./Flex";
 import { useId, useRef, useState, useEffect } from "react";
 import { LayerItemCollapse } from "./LayerItemCollapse";
 import { LayerItemField } from "./LayerItemField";
 import { LayerItemIcon } from "./LayerItemIcon";
-import { Draggable } from "../Draggable";
-import { useCall, useForceUpdate } from "../../hooks";
+import { Draggable } from "./Draggable";
+import { useCall, useForceUpdate } from "../hooks";
 // import { addSuffix, getParent } from "../../core";
 
 export const LayerItem = (props) => {
@@ -84,10 +84,6 @@ export const LayerItem = (props) => {
           isOpen={isOpen}
           onClick={handleClickCollapse}
         />
-        {/* {!obj.memo.ymap && "NO YMAP"}
-        {!obj.memo.yarr && "NO YARR"}
-        {!obj.memo.ymap.doc && "NO YDOC"}
-        {!obj.memo.yarr.length && obj.memo.yarr.length} */}
         <div onClick={handleClickIcon}>
           <LayerItemIcon active={active}>
             <div data-id={id}>{obj.type?.[0]}</div>

@@ -40,7 +40,7 @@ export const dragEvent = () => {
       self.on(self);
       self.delta = self.movement = [0, 0];
     },
-    mount(target: El) {
+    mount(target) {
       self.target = target;
       target.addEventListener("pointermove", self.move);
       target.addEventListener("pointerdown", self.down);

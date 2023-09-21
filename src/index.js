@@ -4,13 +4,13 @@ import { WebrtcProvider } from "y-webrtc";
 import { createRoot } from "react-dom/client";
 import {
   createTree,
-  addCollection,
-  deleteCollection,
+  addObject,
+  deleteObject,
   convert,
   observe
 } from "./core";
 import { useCall, useForceUpdate, useOnce } from "./hooks";
-import { Layer, Flex, Header } from "../components";
+import { Layer, Flex, Header } from "./components";
 
 const style = {
   margin: 0,
@@ -25,12 +25,12 @@ const App = () => {
   const forceUpdate = useForceUpdate();
 
   const handleClickAdd = useCall(() => {
-    addCollection(objectTree);
+    addObject(objectTree, forceUpdate);
     forceUpdate();
   });
 
   const handleClickDelete = useCall(() => {
-    deleteCollection(objectTree);
+    deleteObject(objectTree);
     forceUpdate();
   });
 
@@ -38,36 +38,39 @@ const App = () => {
 
   useOnce(() => {
     convert(objectTree, ydoc);
-    observe(objectTree);
+    observe(objectTree, forceUpdate);
+    console.log("\n\n")
     return new WebrtcProvider("roomId", ydoc);
   });
 
-  useOnce(() => {
-    const ymap = ydoc.getMap("TEST");
-    const child = new Y.Map();
-    ymap.set("child", child);
+  // useOnce(() => {
+  //   const ymap = ydoc.getMap("TEST");
+  //   const yarr = new Y.Array();
+  //   const child = new Y.Map()
+  //   ymap.set("child", yarr);
+  //   yarr.push([child]);
 
-    child.observe((e) => {
-      if (!e.transaction.local) console.log("CHANGED");
-    });
+  //   ymap.observeDeep((e) => {
+  //     console.log("CHANGED");
+  //   });
 
-    ymap.observe((e) => {
-      if (!e.transaction.local) console.log("CHANGED");
-    });
+  //   setInterval(() => {
+  //     child.set("random", Math.random());
+  //   }, 1000);
 
-    setInterval(() => {
-      child.set("random", Math.random());
-    }, 1000);
-
-    return true;
-  });
+  //   return true;
+  // });
 
   useOnce(() => Object.assign(document.body.style, style));
 
   return (
     <Flex>
       <Header onClick={handleClickAdd} onDelete={handleClickDelete} />
-      <Layer onClick={handleClickAdd} objectTree={objectTree} />
+      <Layer
+        onClick={handleClickAdd}
+        objectTree={objectTree}
+        forceUpdate={forceUpdate}
+      />
     </Flex>
   );
 };
