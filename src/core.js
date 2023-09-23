@@ -93,12 +93,13 @@ export const moveObject = (tree, grabbed, hovered) => {
   const _parent = parent.memo.yarr;
   if (!_hovered || !_parent) return;
 
+  _hovered.set(grabbed.key, true);
+  _parent.set(grabbed.key, false);
+
   unobserve(grabbed);
   convert(grabbed);
   observe(grabbed);
 
-  _hovered.push([grabbed.key]); // add
-  _parent.delete(index, 1); // delete
   return tree;
 };
 
@@ -117,7 +118,7 @@ export const addObject = (tree) => {
   // ymap
   const yarr = tree.memo.yarr;
   child.key = getLayerKey(child);
-  yarr.push([child.key]);
+  yarr.set(child.key, true);
   convert(child);
   observe(child);
   obj2ymap(child);
@@ -137,7 +138,7 @@ export const deleteObject = (tree, parent) => {
   const yarr = parent.memo.yarr;
   const ymap = tree.memo.ymap;
   if (!yarr || !ymap) return;
-  yarr.delete(index); // yarr.delete(tree.id);
+  yarr.set(tree.key, false);
   return tree;
 };
 
@@ -190,14 +191,18 @@ export const ymap2obj = (obj) => {
 
 export const yarr2obj = (obj) => {
   const yarr = obj.memo.yarr;
-  if (yarr.length <= 0) return;
-  for (let i = 0; i < yarr.length; i++) {
-    const child = insertObject(obj);
-    child.key = getLayerKey(child);
-    child.parent = obj;
-    convert(child);
-    // observe(child); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  }
+  yarr.forEach((active, key) => {
+    if (active) {
+      const child = insertObject(obj, key);
+      if (!child) return;
+      child.parent = obj;
+      convert(child);
+      observe(child);
+    } else {
+      spliceObject(obj, key);
+      // unobserve(obj);
+    }
+  });
 };
 
 export const convert = (obj, ydoc) => {
@@ -208,15 +213,15 @@ export const convert = (obj, ydoc) => {
 
   const ymap = ydoc.getMap(obj.key);
   if (obj.children) {
-    const yarr = ydoc.getArray("$" + obj.key);
+    const yarr = ydoc.getMap("$" + obj.key);
     obj.children.forEach((child) => {
       child.key = "+"; // @TODO FIX
       child.key = getLayerKey(child);
-      yarr.push([child.key]); // ERROR !!!
+      yarr.set(child.key, true);
       convert(child, ydoc);
     });
     obj.memo.yarr = yarr;
-    // yarr2obj(obj);         // ERROR !!!
+    yarr2obj(obj);
   }
   obj.memo.ymap = ymap;
   ymap2obj(obj);
@@ -237,19 +242,21 @@ export const observe = (obj, forceUpdateRoot) => {
 
   const yarrObserve = (e) => {
     if (e.transaction.local) return;
-    e.changes.delta.forEach((delta) => {
-      delta.insert?.forEach((key) => {
+    console.log(e.changes)
+    e.changes.keys.forEach((_, key) => {
+      const active = yarr.get(key);
+      if (active) {
         const child = insertObject(obj, key);
         convert(child);
         observe(child);
-        obj.memo.forceUpdateRoot(); // obj.forceUpdate(); @TODO FIX
-      });
-      if (delta.delete === 1) {
-        spliceObject(obj, e);
-        obj.memo.forceUpdateRoot(); // obj.forceUpdate(); @TODO FIX
       }
+      else {
+        console.log(key, active)
+        spliceObject(obj, key);
+      }
+      if (obj.memo.forceUpdateRoot) obj.memo.forceUpdateRoot();
     });
-  };
+  }
 
   if (yarr) yarr.observe(yarrObserve);
   if (ymap) ymap.observe(ymapObserve);
@@ -264,8 +271,7 @@ export const observe = (obj, forceUpdateRoot) => {
 };
 
 const insertObject = (obj, key = "") => {
-  console.log(obj.memo.yarr.toArray(), key);
-  if (obj.children.some((child) => child.key === key) || obj.memo.yarr.toArray().some(v => v === key)) return;
+  if (obj.children.some((child) => child.key === key)) return;
   const child = createObject("+", { id: "Collection" });
   child.parent = obj;
   if (key) child.key = key;
@@ -273,13 +279,14 @@ const insertObject = (obj, key = "") => {
   return child;
 };
 
-const spliceObject = (obj, e) => {
-  const index = e.changes.delta.map(({ retain }) => retain)[0] || 0;
+
+const spliceObject = (obj, key) => {
+  const index = obj.children.findIndex((child) => child.key === key);
   const child = obj.children[index];
-  if (!child || !child.key) return console.warn(index);
+  if (!child || !child.key) return console.warn(`Warn: ${key} not found`);
   obj.children.splice(index, 1);
   unobserve(child);
-}
+};
 
 export const unobserve = (obj) => {
   if (Array.isArray(obj.children)) obj.children.forEach(unobserve);

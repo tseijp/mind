@@ -79,9 +79,8 @@ export const LayerItem = (props) => {
         overflowX="visible"
         overflowY="visible"
       >
-        {obj.memo.yarr?.length}
         <div style={{ fontSize: "0.8rem", color: "red" }}>
-          {obj.key}
+          {!obj.memo && "!MEMO"}
           {!obj.memo.ydoc && "!YDOC"}
           {!obj.memo.ymap && "!YMAP"}
           {!obj.memo.yarr && "!YARR"}
