@@ -20,6 +20,8 @@ const style = {
   backgroundColor: "#282828"
 };
 
+const CONNECTED_TIMEOUT_MS = 10;
+
 const App = () => {
   const objectTree = useOnce(() => createTree());
   const forceUpdate = useForceUpdate();
@@ -37,40 +39,26 @@ const App = () => {
   const ydoc = useOnce(() => new Y.Doc());
 
   useOnce(() => {
+    console.log("\n\n");
+    const provider = new WebrtcProvider("roomId", ydoc);
     convert(objectTree, ydoc);
     observe(objectTree, forceUpdate);
-    console.log("\n\n")
-    return new WebrtcProvider("roomId", ydoc);
+
+    // Observed values are not always updated when reloading the browser.
+    const tick = () => {
+      if (!provider.connected) setTimeout(tick, CONNECTED_TIMEOUT_MS);
+      else forceUpdate();
+    };
+    setTimeout(tick, CONNECTED_TIMEOUT_MS);
+    return provider;
   });
-
-  // useOnce(() => {
-  //   const ymap = ydoc.getMap("TEST");
-  //   const yarr = new Y.Array();
-  //   const child = new Y.Map()
-  //   ymap.set("child", yarr);
-  //   yarr.push([child]);
-
-  //   ymap.observeDeep((e) => {
-  //     console.log("CHANGED");
-  //   });
-
-  //   setInterval(() => {
-  //     child.set("random", Math.random());
-  //   }, 1000);
-
-  //   return true;
-  // });
 
   useOnce(() => Object.assign(document.body.style, style));
 
   return (
     <Flex>
       <Header onClick={handleClickAdd} onDelete={handleClickDelete} />
-      <Layer
-        onClick={handleClickAdd}
-        objectTree={objectTree}
-        forceUpdate={forceUpdate}
-      />
+      <Layer onClick={handleClickAdd} objectTree={objectTree} />
     </Flex>
   );
 };

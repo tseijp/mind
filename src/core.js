@@ -75,11 +75,12 @@ export const getParent = (tree, item) => {
   }
 };
 
-export const moveObject = (tree, grabbed, hovered, forceUpdate) => {
-  if (grabbed.children?.length) return alert("Error"); // @TODO FIX
+export const moveObject = (tree, grabbed, hovered) => {
+  // if (grabbed.children?.length) return alert("Error"); // @TODO FIX
   if (isOffspring(grabbed, hovered)) return alert("Error");
   const parent = getParent(tree, grabbed);
   const index = parent.children.indexOf(grabbed);
+
   // sortObject(tree);
   hovered.children.push(grabbed); // add
   grabbed.parent = hovered;
@@ -93,17 +94,17 @@ export const moveObject = (tree, grabbed, hovered, forceUpdate) => {
   if (!_hovered || !_parent) return;
 
   unobserve(grabbed);
-  convert(grabbed, parent.memo.ydoc);
-  observe(grabbed, forceUpdate);
+  convert(grabbed);
+  observe(grabbed);
 
   _hovered.push([grabbed.key]); // add
   _parent.delete(index, 1); // delete
   return tree;
 };
 
-export const addObject = (tree, forceUpdate) => {
+export const addObject = (tree) => {
   if (!tree.active) {
-    for (const child of tree.children) addObject(child, forceUpdate);
+    for (const child of tree.children) addObject(child);
     return;
   }
 
@@ -115,12 +116,11 @@ export const addObject = (tree, forceUpdate) => {
 
   // ymap
   const yarr = tree.memo.yarr;
-  const ydoc = tree.memo.ydoc;
-  if (!yarr || !ydoc) return;
   child.key = getLayerKey(child);
-  convert(child, ydoc);
-  observe(child, forceUpdate);
   yarr.push([child.key]);
+  convert(child);
+  observe(child);
+  obj2ymap(child);
   return tree;
 };
 
@@ -152,6 +152,23 @@ export const isOffspring = (target, self) => {
 /**
  * ymaps
  */
+export const isIgnoreKey = (key) => {
+  if (key === "children") return true;
+  if (key === "parent") return true;
+  if (key === "memo") return true;
+  return false;
+};
+
+export const obj2ymap = (obj) => {
+  const ymap = obj.memo.ymap;
+  for (const key in obj) {
+    if (typeof obj[key] === "function") continue;
+    if (isIgnoreKey(key)) continue;
+    ymap.set(key, obj[key]);
+  }
+  if (obj.children?.length >= 1) obj.children.forEach(obj2ymap);
+};
+
 export const getLayerKey = (obj) => {
   if (!obj.parent) return obj.key;
   const key = obj.parent.key + "$" + obj.key;
@@ -161,89 +178,102 @@ export const getLayerKey = (obj) => {
   return (obj.key = addSuffix(keys, key));
 };
 
-export const convert = (obj, ydoc, withoutSet) => {
+export const ymap2obj = (obj) => {
+  const ymap = obj.memo.ymap;
+  for (const key in obj) {
+    if (isIgnoreKey(key)) continue;
+    const value = ymap.get(key);
+    if (value !== void 0)
+      obj[key] = value;
+  }
+};
+
+export const yarr2obj = (obj) => {
+  const yarr = obj.memo.yarr;
+  if (yarr.length <= 0) return;
+  for (let i = 0; i < yarr.length; i++) {
+    const child = insertObject(obj);
+    child.key = getLayerKey(child);
+    child.parent = obj;
+    convert(child);
+    // observe(child); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  }
+};
+
+export const convert = (obj, ydoc) => {
+  // Pass top ydoc recursively
+  if (!ydoc) ydoc = obj?.parent?.memo?.ydoc;
+  if (!ydoc) return;
+  obj.memo.ydoc = ydoc;
+
   const ymap = ydoc.getMap(obj.key);
   if (obj.children) {
     const yarr = ydoc.getArray("$" + obj.key);
     obj.children.forEach((child) => {
       child.key = "+"; // @TODO FIX
       child.key = getLayerKey(child);
+      yarr.push([child.key]); // ERROR !!!
       convert(child, ydoc);
-      yarr.push([child.key]);
     });
     obj.memo.yarr = yarr;
-    // ymap.set("children", yarr) // ERROR
-  }
-  for (const key in obj) {
-    if (withoutSet) continue;
-    if (typeof obj[key] === "function") continue;
-    if (key === "parent" || key === "memo" || key === "children") continue;
-    console.log("SETEED", key, obj[key]);
-    ymap.set(key, obj[key]);
+    // yarr2obj(obj);         // ERROR !!!
   }
   obj.memo.ymap = ymap;
-  obj.memo.ydoc = ydoc;
+  ymap2obj(obj);
   return ymap;
 };
 
-export const observe = (obj, forceUpdate) => {
+export const observe = (obj, forceUpdateRoot) => {
   const { ymap, yarr } = obj.memo;
 
-  // nested observe
-  if (Array.isArray(obj.children))
-    obj.children.forEach((child) => observe(child, forceUpdate));
-
-  if (!ymap) return alert("oberse error: ymap is not defined");
   const ymapObserve = (e) => {
     if (e.transaction.local) return;
-    if (e) console.log("OBSERVERD", e);
     e.changes.keys.forEach((_, key) => {
-      if (key === "children") return;
-      if (key === "parent") return;
-      if (key === "memo") return;
+      if (isIgnoreKey(key)) return;
       obj[key] = ymap.get(key);
-      if (obj.forceUpdate) obj.forceUpdate();
+      if (obj.memo.forceUpdateRoot) obj.memo.forceUpdateRoot();
     });
   };
-  ymap.observe(ymapObserve);
-  if (!obj.memo.unobserveListener) obj.memo.unobserveListener = new Set();
-  obj.memo.unobserveListener.add(() => ymap.unobserve(ymapObserve));
 
-  if (!yarr) return alert("oberse error: yarr is not defined");
-  const yarrObjserve = (e) => {
+  const yarrObserve = (e) => {
     if (e.transaction.local) return;
     e.changes.delta.forEach((delta) => {
       delta.insert?.forEach((key) => {
-        createAll(obj, key, forceUpdate);
-        forceUpdate(); // obj.forceUpdate(); @TODO FIX
-      })
+        const child = insertObject(obj, key);
+        convert(child);
+        observe(child);
+        obj.memo.forceUpdateRoot(); // obj.forceUpdate(); @TODO FIX
+      });
       if (delta.delete === 1) {
-        deleteAll(obj, e);
-        forceUpdate(); // obj.forceUpdate(); @TODO FIX
+        spliceObject(obj, e);
+        obj.memo.forceUpdateRoot(); // obj.forceUpdate(); @TODO FIX
       }
     });
   };
-  yarr.observe(yarrObjserve);
-  obj.memo.unobserveListener.add(() => yarr.unobserve(yarrObjserve));
+
+  if (yarr) yarr.observe(yarrObserve);
+  if (ymap) ymap.observe(ymapObserve);
+  if (!obj.memo.unobserveListener) obj.memo.unobserveListener = new Set();
+  obj.memo.unobserveListener.add(() => ymap.unobserve(ymapObserve));
+  obj.memo.unobserveListener.add(() => yarr.unobserve(yarrObserve));
+  obj.memo.forceUpdateRoot = forceUpdateRoot || obj.parent.memo.forceUpdateRoot;
+
+  // nested observe
+  if (Array.isArray(obj.children))
+    obj.children.forEach((child) => observe(child));
 };
 
-const createAll = (obj, key, forceUpdate) => {
-  if (obj.children.some((child) => child.key === key)) return;
+const insertObject = (obj, key = "") => {
+  console.log(obj.memo.yarr.toArray(), key);
+  if (obj.children.some((child) => child.key === key) || obj.memo.yarr.toArray().some(v => v === key)) return;
   const child = createObject("+", { id: "Collection" });
   child.parent = obj;
-  child.key = key;
+  if (key) child.key = key;
   obj.children.push(child);
-  setTimeout(() => {
-
-  convert(child, obj.memo.ydoc, true);
-  observe(child, forceUpdate);
-  }, 1000)
-  // for (let i = 0; i < child.memo.yarr.length; i++) {
-  //   createAll(child, )
-  // }
+  return child;
 };
 
-const deleteAll = (obj, e) => {
+const spliceObject = (obj, e) => {
   const index = e.changes.delta.map(({ retain }) => retain)[0] || 0;
   const child = obj.children[index];
   if (!child || !child.key) return console.warn(index);
@@ -257,7 +287,7 @@ export const unobserve = (obj) => {
     obj.memo.unobserveListener.forEach(f => f());
     obj.memo.unobserveListener.clear();
   }
-}
+};
 
 // export const sortObject = (tree) => {
 //   const { children } = tree;

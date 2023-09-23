@@ -7,7 +7,7 @@ import { LayerItem } from "./LayerItem";
 import { moveObject } from "../core";
 
 export const Layer = (props) => {
-  const { onClick, objectTree, forceUpdate } = props;
+  const { onClick, objectTree } = props;
 
   // useOnce(() => sortObject(objectTree));
 
@@ -51,7 +51,7 @@ export const Layer = (props) => {
       cache.hovered = null;
       setHovered(null);
       if (!grabbed || !hovered || grabbed === hovered) return;
-      moveObject(objectTree, grabbed, hovered, forceUpdate);
+      moveObject(objectTree, grabbed, hovered);
     },
     clickIcon(obj) {
       if (obj.active) onClick();

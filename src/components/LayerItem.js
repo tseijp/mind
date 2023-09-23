@@ -65,7 +65,7 @@ export const LayerItem = (props) => {
         width: "100%",
         display: "relative",
         overflowX: "visible",
-        overflowY: "visible"
+        overflowY: "visible",
       }}
     >
       <Flex
@@ -79,6 +79,13 @@ export const LayerItem = (props) => {
         overflowX="visible"
         overflowY="visible"
       >
+        {obj.memo.yarr?.length}
+        <div style={{ fontSize: "0.8rem", color: "red" }}>
+          {obj.key}
+          {!obj.memo.ydoc && "!YDOC"}
+          {!obj.memo.ymap && "!YMAP"}
+          {!obj.memo.yarr && "!YARR"}
+        </div>
         <LayerItemCollapse
           index={index}
           isOpen={isOpen}
@@ -98,7 +105,7 @@ export const LayerItem = (props) => {
       <div
         style={{
           height: isOpen ? "auto" : "0px",
-          overflow: isOpen ? "visible" : "hidden"
+          overflow: isOpen ? "visible" : "hidden",
         }}
       >
         {children}
