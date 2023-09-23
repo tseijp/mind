@@ -10,8 +10,8 @@ import {
   convert,
   observe
 } from "./core";
-import { useCall, useForceUpdate, useOnce } from "./hooks";
-import { Layer, Flex, Header } from "./components";
+import { useCall, useForceUpdate, useOnce, useUsers } from "./hooks";
+import { Layer, Flex, Header, Users } from "./components";
 
 const style = {
   margin: 0,
@@ -22,11 +22,25 @@ const style = {
 };
 
 const CONNECTED_TIMEOUT_MS = 100;
-
+const { floor, random } = Math;
 const App = () => {
+  const [isReady, setIsReady] = useState(false);
   const objectTree = useOnce(() => createTree());
   const forceUpdate = useForceUpdate();
-  const [isReady, setIsReady] = useState(false);
+  const userId = useOnce(() => "" + floor(random() * 1000));
+  const roomId = useOnce(() => {
+    const params = new URLSearchParams(window.location.search);
+    const roomId = params.get("roomId") || "" + floor(random() * 10000000);
+    window.history.replaceState(null, "", `?roomId=${roomId}&userId=${userId}`);
+    return roomId;
+  });
+
+  const ydoc = useOnce(() => new Y.Doc());
+  const { user, users } = useUsers(ydoc, userId, roomId);
+
+  const _handleChangeUserId = useCall((e) => {
+    user.set("username", e.target.value);
+  });
 
   const handleClickAdd = useCall(() => {
     addObject(objectTree, forceUpdate);
@@ -38,10 +52,9 @@ const App = () => {
     forceUpdate();
   });
 
-  const ydoc = useOnce(() => new Y.Doc());
 
   useOnce(() => {
-    const provider = new WebrtcProvider("roomId", ydoc);
+    const provider = new WebrtcProvider(roomId, ydoc);
     convert(objectTree, ydoc);
     observe(objectTree, forceUpdate);
 
@@ -62,6 +75,7 @@ const App = () => {
     <Flex backgroundColor="#282828">
       <Header onClick={handleClickAdd} onDelete={handleClickDelete} />
       <Layer onClick={handleClickAdd} objectTree={objectTree} />
+      <Users ydoc={ydoc} users={users} />
     </Flex>
   );
 };

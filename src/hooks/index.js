@@ -5,3 +5,4 @@ export * from "./useFieldEvent";
 export * from "./useForceUpdate";
 export * from "./useMutable";
 export * from "./useOnce";
+export * from "./useUsers";
