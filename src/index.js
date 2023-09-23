@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useState } from "react";
 import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import { createRoot } from "react-dom/client";
@@ -25,6 +26,7 @@ const CONNECTED_TIMEOUT_MS = 100;
 const App = () => {
   const objectTree = useOnce(() => createTree());
   const forceUpdate = useForceUpdate();
+  const [isReady, setIsReady] = useState(false);
 
   const handleClickAdd = useCall(() => {
     addObject(objectTree, forceUpdate);
@@ -46,7 +48,7 @@ const App = () => {
     // Observed values are not always updated when reloading the browser.
     const tick = () => {
       if (!provider.connected) setTimeout(tick, CONNECTED_TIMEOUT_MS);
-      else forceUpdate();
+      else setIsReady(true);
     };
     setTimeout(tick, CONNECTED_TIMEOUT_MS);
     return provider;
@@ -54,8 +56,10 @@ const App = () => {
 
   useOnce(() => Object.assign(document.body.style, style));
 
+  if (!isReady) return;
+
   return (
-    <Flex>
+    <Flex backgroundColor="#282828">
       <Header onClick={handleClickAdd} onDelete={handleClickDelete} />
       <Layer onClick={handleClickAdd} objectTree={objectTree} />
     </Flex>
