@@ -75,32 +75,10 @@ export const getParent = (tree, item) => {
   }
 };
 
-export const moveObject = (tree, grabbed, hovered) => {
-  // if (grabbed.children?.length) return alert("Error"); // @TODO FIX
-  if (isOffspring(grabbed, hovered)) return alert("Error");
-  const parent = getParent(tree, grabbed);
-  const index = parent.children.indexOf(grabbed);
-
-  // sortObject(tree);
-  hovered.children.push(grabbed); // add
-  grabbed.parent = hovered;
-  grabbed.key = "+"
-  grabbed.key = getLayerKey(grabbed);
-  parent.children.splice(index, 1); // delete
-
-  // ymap
-  const _hovered = hovered.memo.yarr;
-  const _parent = parent.memo.yarr;
-  if (!_hovered || !_parent) return;
-
-  _hovered.set(grabbed.key, true);
-  _parent.set(grabbed.key, false);
-
-  unobserve(grabbed);
-  convert(grabbed);
-  observe(grabbed);
-
-  return tree;
+export const deactivateObject = (obj) => {
+  const yarr = obj.parent.memo.yarr;
+  yarr.set(obj.key, false);
+  obj.children.forEach(deactivateObject);
 };
 
 export const addObject = (tree) => {
@@ -138,7 +116,38 @@ export const deleteObject = (tree, parent) => {
   const yarr = parent.memo.yarr;
   const ymap = tree.memo.ymap;
   if (!yarr || !ymap) return;
-  yarr.set(tree.key, false);
+  deactivateObject(tree);
+  return tree;
+};
+
+export const moveObject = (tree, grabbed, hovered) => {
+  // if (grabbed.children?.length) return alert("Error"); // @TODO FIX
+  if (isOffspring(grabbed, hovered)) return alert("Error");
+  const parent = getParent(tree, grabbed);
+  const index = parent.children.indexOf(grabbed);
+  const prevKey = grabbed.key;
+
+  // sortObject(tree);
+  hovered.children.push(grabbed); // add
+  grabbed.parent = hovered;
+  grabbed.key = "+";
+  grabbed.key = getLayerKey(grabbed);
+  parent.children.splice(index, 1); // delete
+
+  // ymap
+  const _hovered = hovered.memo.yarr;
+  const _parent = parent.memo.yarr;
+  if (!_hovered || !_parent) return;
+
+  deactivateObject(grabbed);
+  _parent.set(prevKey, false);
+  _hovered.set(grabbed.key, true);
+
+  unobserve(grabbed);
+  convert(grabbed);
+  observe(grabbed);
+  obj2ymap(grabbed);
+
   return tree;
 };
 
@@ -200,7 +209,7 @@ export const yarr2obj = (obj) => {
       observe(child);
     } else {
       spliceObject(obj, key);
-      // unobserve(obj);
+      unobserve(obj);
     }
   });
 };
@@ -236,24 +245,21 @@ export const observe = (obj, forceUpdateRoot) => {
     e.changes.keys.forEach((_, key) => {
       if (isIgnoreKey(key)) return;
       obj[key] = ymap.get(key);
-      if (obj.memo.forceUpdateRoot) obj.memo.forceUpdateRoot();
+      if (obj.forceUpdate) obj.forceUpdate();
     });
   };
 
   const yarrObserve = (e) => {
     if (e.transaction.local) return;
-    console.log(e.changes)
     e.changes.keys.forEach((_, key) => {
       const active = yarr.get(key);
       if (active) {
         const child = insertObject(obj, key);
         convert(child);
         observe(child);
+        ymap2obj(child);
       }
-      else {
-        console.log(key, active)
-        spliceObject(obj, key);
-      }
+      else spliceObject(obj, key);
       if (obj.memo.forceUpdateRoot) obj.memo.forceUpdateRoot();
     });
   }

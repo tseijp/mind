@@ -20,7 +20,7 @@ const style = {
   backgroundColor: "#282828"
 };
 
-const CONNECTED_TIMEOUT_MS = 10;
+const CONNECTED_TIMEOUT_MS = 100;
 
 const App = () => {
   const objectTree = useOnce(() => createTree());
@@ -39,7 +39,6 @@ const App = () => {
   const ydoc = useOnce(() => new Y.Doc());
 
   useOnce(() => {
-    console.log("\n\n");
     const provider = new WebrtcProvider("roomId", ydoc);
     convert(objectTree, ydoc);
     observe(objectTree, forceUpdate);

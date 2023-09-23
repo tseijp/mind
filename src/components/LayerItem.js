@@ -1,4 +1,5 @@
 import * as React from "react";
+import { memo } from "react";
 import { Flex } from "./Flex";
 import { useId, useRef, useState, useEffect } from "react";
 import { LayerItemCollapse } from "./LayerItemCollapse";
@@ -8,7 +9,7 @@ import { Draggable } from "./Draggable";
 import { useCall, useForceUpdate } from "../hooks";
 // import { addSuffix, getParent } from "../../core";
 
-export const LayerItem = (props) => {
+const LayerItemImpl = (props) => {
   const { children, obj, index = 0, active, disable, handlers } = props;
   const id = useId();
   const ref = useRef(null);
@@ -79,12 +80,6 @@ export const LayerItem = (props) => {
         overflowX="visible"
         overflowY="visible"
       >
-        <div style={{ fontSize: "0.8rem", color: "red" }}>
-          {!obj.memo && "!MEMO"}
-          {!obj.memo.ydoc && "!YDOC"}
-          {!obj.memo.ymap && "!YMAP"}
-          {!obj.memo.yarr && "!YARR"}
-        </div>
         <LayerItemCollapse
           index={index}
           isOpen={isOpen}
@@ -112,3 +107,11 @@ export const LayerItem = (props) => {
     </div>
   );
 };
+
+export const LayerItem = memo(LayerItemImpl, (prev, next) => {
+  if (prev.obj !== next.obj) return false;
+  if (prev.active !== next.active) return false;
+  if (prev.disable !== next.disable) return false;
+  if (prev.children !== next.children) return false;
+  return true;
+});
