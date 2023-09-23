@@ -49,7 +49,7 @@ export const createTree = () => {
   const c1 = createObject("+", { id: "9cdf2305-c68a-4876-9afa-e9941879070b" });
   const r00 = createObject("+", { id: "UserA paired with UserB" });
   const r0 = createObject("+", { id: "Matching feature success" }, [r00]);
-  const r1 = createObject("+", { id: "Auto send first message to both userA and userB is success" });
+  const r1 = createObject("+", {  id: "Auto send first message to both userA and userB is success" });
   const r2 = createObject("+", { id: "Query data in Appsync is success" });
   const a = createObject("+", { id: "UserA" }, [a0, a1]);
   const b = createObject("+", { id: "UserB" }, [b0, b1]);
@@ -60,7 +60,7 @@ export const createTree = () => {
   const mtg2 = createObject("+", { id: "Meeting 2" });
   const mtg3 = createObject("+", { id: "Meeting 3" });
   const tree = createObject("+", { id: "Meeting GitMind" }, [mtg1, mtg2, mtg3]);
-  return tree
+  return tree;
 };
 
 // @TODO DELETE
@@ -74,6 +74,12 @@ export const getParent = (tree, item) => {
     }
   }
 };
+
+export const activateObject = (obj) => {
+  const yarr = obj.parent.memo.yarr;
+  yarr.set(obj.key, true);
+  obj.children.forEach(activateObject);
+}
 
 export const deactivateObject = (obj) => {
   const yarr = obj.parent.memo.yarr;
@@ -145,6 +151,7 @@ export const moveObject = (tree, grabbed, hovered) => {
 
   unobserve(grabbed);
   convert(grabbed);
+  activateObject(grabbed);
   observe(grabbed);
   obj2ymap(grabbed);
 
@@ -193,8 +200,7 @@ export const ymap2obj = (obj) => {
   for (const key in obj) {
     if (isIgnoreKey(key)) continue;
     const value = ymap.get(key);
-    if (value !== void 0)
-      obj[key] = value;
+    if (value !== void 0) obj[key] = value;
   }
 };
 
@@ -226,7 +232,7 @@ export const convert = (obj, ydoc) => {
     obj.children.forEach((child) => {
       child.key = "+"; // @TODO FIX
       child.key = getLayerKey(child);
-      yarr.set(child.key, true);
+      // yarr.set(child.key, true); // !!!!!!!!!!!!!!!!!!!!!!
       convert(child, ydoc);
     });
     obj.memo.yarr = yarr;
@@ -258,11 +264,10 @@ export const observe = (obj, forceUpdateRoot) => {
         convert(child);
         observe(child);
         ymap2obj(child);
-      }
-      else spliceObject(obj, key);
+      } else spliceObject(obj, key);
       if (obj.memo.forceUpdateRoot) obj.memo.forceUpdateRoot();
     });
-  }
+  };
 
   if (yarr) yarr.observe(yarrObserve);
   if (ymap) ymap.observe(ymapObserve);
@@ -285,7 +290,6 @@ const insertObject = (obj, key = "") => {
   return child;
 };
 
-
 const spliceObject = (obj, key) => {
   const index = obj.children.findIndex((child) => child.key === key);
   const child = obj.children[index];
@@ -297,7 +301,7 @@ const spliceObject = (obj, key) => {
 export const unobserve = (obj) => {
   if (Array.isArray(obj.children)) obj.children.forEach(unobserve);
   if (obj.memo.unobserveListener) {
-    obj.memo.unobserveListener.forEach(f => f());
+    obj.memo.unobserveListener.forEach((f) => f());
     obj.memo.unobserveListener.clear();
   }
 };
