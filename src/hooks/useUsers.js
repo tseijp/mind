@@ -35,6 +35,7 @@ export const useUsers = (ydoc, userId, roomId) => {
     e.changes.keys.forEach((_, key) => _users.push(key)); // map is not supported
     setUsers((users) => {
       _users.forEach((key) => {
+        if (key === userId) return;
         if (!checkers[key]) checkers[key] = createChecker(key, handleOffline);
         checkers[key]();
         const target = ymap.get(key);

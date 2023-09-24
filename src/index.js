@@ -27,17 +27,16 @@ const App = () => {
   const [isReady, setIsReady] = useState(false);
   const objectTree = useOnce(() => createTree());
   const forceUpdate = useForceUpdate();
-  const userId = useOnce(() => {
-    const userId = "" + floor(random() * 100000000000);
-    return userId;
-  });
 
-  const roomId = useOnce(() => {
-    const params = new URLSearchParams(window.location.search);
-    const roomId = params.get("roomId") || "" + floor(random() * 100);
+  const params = useOnce(() => new URLSearchParams(window.location.search));
+
+  const userId = useOnce(() => params.get("userId") || "" + floor(random() * 100000000000));
+  const roomId = useOnce(() => params.get("roomId") || "" + floor(random() * 100));
+
+  useOnce(() => {
     window.history.replaceState(null, "", `?roomId=${roomId}&userId=${userId}`);
-    return roomId;
-  });
+    return true;
+  })
 
   const ydoc = useOnce(() => new Y.Doc());
   const { user, users, ymap } = useUsers(ydoc, userId, roomId);
