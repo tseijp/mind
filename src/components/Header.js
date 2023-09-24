@@ -9,8 +9,13 @@ import { useCall, useOnce } from "../hooks";
 const { floor, random } = Math;
 
 export const Header = (props) => {
-  const { children, onClick, onDelete, onChange } = props;
+  const { children, roomId, onClick, onDelete, onChange } = props;
   const [name, set] = useState(INIT_USERNAME);
+
+  const handleOpen = useCall((value) => {
+    window.open(`?roomId=${value}&userId=${name}`, "_blank");
+  });
+
   const handleChange = useCall((value) => {
     set((prev) => {
       if (prev !== value) onChange(value);
@@ -43,9 +48,13 @@ export const Header = (props) => {
         <LayerItemIcon active children="-" />
         <LayerItemField>DELETE</LayerItemField>
       </div>
-      <div onClick={onDelete} style={{ display: "flex" }}>
-        <LayerItemIcon active children="-" />
+      <div style={{ display: "flex" }}>
+        Username:
         <LayerItemField onChange={handleChange}>{name}</LayerItemField>
+      </div>
+      <div style={{ display: "flex" }}>
+        Room ID:
+        <LayerItemField onChange={handleOpen}>{roomId}</LayerItemField>
       </div>
       {children}
     </Flex>
