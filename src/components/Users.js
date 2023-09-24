@@ -13,7 +13,6 @@ const style = {
 
 export const Cursor = (props) => {
   const { ydoc, userId } = props;
-  const [opacity, setOpacity] = useState(1);
   const [username, setUsername] = useState("anonymous");
   const ref = useRef();
   const user = useOnce(() => ydoc.getMap(userId));
@@ -24,26 +23,35 @@ export const Cursor = (props) => {
     if (key === "x") gsap.to(el, { left: user.get(key) });
     if (key === "y") gsap.to(el, { top: user.get(key) });
   });
-  useOnce(() => {
+
+  const cleanup = useOnce(() => {
     let listener = () => {};
     let timeoutId = 0;
     user.observe((e) => {
       if (e.transaction.local) return;
-      setOpacity(1);
+      gsap.to(ref.current, { opacity: 1 });
       listener();
       listener = () => clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => setOpacity(0), 1000);
+      timeoutId = setTimeout(() => {
+        gsap.to(ref.current, { opacity: 0 });
+      }, 1000);
       e.changes.keys.forEach((_, key) => update(key));
     });
+    return () => {
+      listener();
+      clearTimeout(timeoutId);
+    };
   });
+
   useEffect(() => {
     update("x");
     update("y");
     update("username");
-  }, [])
+    return cleanup;
+  }, []);
 
   return (
-    <div ref={ref} style={{ ...style, opacity }}>
+    <div ref={ref} style={style}>
       <div style={{ margin: 10 }}>{username}</div>
     </div>
   );
