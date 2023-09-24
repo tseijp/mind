@@ -33,7 +33,7 @@ export const Cursor = (props) => {
       listener();
       listener = () => clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
-        gsap.to(ref.current, { opacity: 0 });
+        gsap.to(ref.current, { opacity: 0.1 });
       }, 1000);
       e.changes.keys.forEach((_, key) => update(key));
     });
@@ -53,11 +53,14 @@ export const Cursor = (props) => {
   return (
     <div ref={ref} style={style}>
       <div style={{ margin: 10 }}>{username}</div>
+      <div style={{ margin: 10 }}>{userId}</div>
     </div>
   );
 };
 
 export const Users = (props) => {
   const { ydoc, users } = props;
-  return users.map((key) => <Cursor key={key} userId={key} ydoc={ydoc} />);
+  return users.map((key) => (
+    <Cursor key={key} userId={key} ydoc={ydoc} />
+  ));
 };

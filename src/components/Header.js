@@ -10,7 +10,7 @@ const { floor, random } = Math;
 
 export const Header = (props) => {
   const { children, roomId, onClick, onDelete, onChange } = props;
-  const [name, set] = useState(INIT_USERNAME);
+  const [name, set] = useState(INIT_USER_NAME);
 
   const handleOpen = useCall((value) => {
     window.open(`?roomId=${value}&userId=${name}`, "_blank");
@@ -61,33 +61,33 @@ export const Header = (props) => {
   );
 };
 
-const USERNAME = [
-  "Abe",
+const USER_NAMES = [
+  "Akechi",
   "Baba",
-  "Chiba",
-  "Daito",
-  "Eto",
-  "Fukuda",
-  "Goto",
-  "Hara",
-  "Ito",
-  "Jinno",
-  "Kato",
-  "Lino",
-  "Mori",
-  "Nakamura",
+  "Chosokabe",
+  "Date",
+  "Edward",
+  "Fuuma",
+  "Gamo",
+  "Honda",
+  "Imagawa",
+  "Jinbo",
+  "Katakura",
+  "Li",
+  "Maeda",
+  "Naoe",
   "Oda",
-  "Pinto",
-  "Ryu",
-  "Sato",
-  "Takahashi",
-  "Ueda",
-  "Vega",
-  "Watanabe",
-  "Xavier",
-  "Yamada",
-  "Zatoichi",
+  "Pierre",
+  "Qiu",
+  "Rokkaku",
+  "Shibata",
+  "Takeda",
+  "Uesugi",
+  "Vettor",
+  "William",
+  "Xu",
+  "Yoshida",
+  "Zhang",
 ];
 
-const INIT_USERNAME =
-  USERNAME[floor(random() * USERNAME.length)] + floor(random() * 1000);
+const INIT_USER_NAME = USER_NAMES[floor(random() * USER_NAMES.length)];
