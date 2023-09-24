@@ -1,29 +1,31 @@
 import { useEffect, useState } from "react";
-import { event } from "reev";
 import { useOnce } from "./useOnce";
+import { useCall } from "./useCall";
 
-export const createUsersEvent = () => {
-  return event();
-};
+const TICK_TIMEOUT_MS = 100;
 
 export const useUsers = (ydoc, userId, roomId) => {
   const [users, setUsers] = useState([]);
 
+  const observeUsers = useCall((e) => {
+    if (e.transaction.local) return;
+    const _users = []
+    e.changes.keys.forEach((_, key) => _users.push(key)); // map is not supported
+    setUsers((users) => {
+      _users.forEach((key) => {
+        const target = ymap.get(key);
+        const isExist = users.includes(key);
+        if (target === roomId) users = isExist ? users : [...users, key];
+        else users = isExist ? users.filter((user) => user !== key) : users;
+      });
+      return users;
+    });
+  });
+
   const ymap = useOnce(() => {
     const ymap = ydoc.getMap("users");
     ymap.set(userId, roomId);
-    ymap.observe((e) => {
-      if (e.transaction.local) return;
-      e.changes.keys.forEach((_, key) => {
-        setUsers((users) => {
-          const isExist = users.includes(key);
-          const target = ymap.get(key);
-          if (target === roomId) return isExist ? users : [...users, key];
-          return isExist ? users.filter((user) => user !== key) : users;
-        });
-      });
-    });
-
+    ymap.observe(observeUsers);
     return ymap;
   });
 
@@ -33,26 +35,18 @@ export const useUsers = (ydoc, userId, roomId) => {
   });
 
   useEffect(() => {
-    let timeoutId = 0, x = 0, y = 0, _x, _y;
+    let x = 0, y = 0;
     const mousemove = (e) => {
-      x = e.clientX;
-      y = e.clientY;
+      x = e.clientX << 0;
+      y = e.clientY << 0;
+      user.set("x", x);
+      user.set("y", y);
     };
-    const tick = () => {
-      if (x !== _x) {
-              _x = x / window.innerWidth;
-              user.set("x", x);
-      }
-      if (y !== _y) {
-              _y = y / window.innerHeight;
-              user.set("y", y);
-      }
-      timeoutId = setTimeout(tick, 100);
-    };
-    timeoutId = setTimeout(tick, 100);
     window.addEventListener("mousemove", mousemove);
+
     return () => {
-      clearTimeout(timeoutId);
+      setUsers([]);
+      ymap.unobserve(observeUsers);
       window.removeEventListener("mousemove", mousemove);
     };
   }, []);

@@ -38,16 +38,16 @@ const App = () => {
   const ydoc = useOnce(() => new Y.Doc());
   const { user, users } = useUsers(ydoc, userId, roomId);
 
-  const _handleChangeUserId = useCall((e) => {
-    user.set("username", e.target.value);
+  const handleChange = useCall((value) => {
+    user.set("username", value);
   });
 
-  const handleClickAdd = useCall(() => {
+  const handleAdd = useCall(() => {
     addObject(objectTree, forceUpdate);
     forceUpdate();
   });
 
-  const handleClickDelete = useCall(() => {
+  const handleDelete = useCall(() => {
     deleteObject(objectTree);
     forceUpdate();
   });
@@ -73,8 +73,8 @@ const App = () => {
 
   return (
     <Flex backgroundColor="#282828">
-      <Header onClick={handleClickAdd} onDelete={handleClickDelete} />
-      <Layer onClick={handleClickAdd} objectTree={objectTree} />
+      <Header onClick={handleAdd} onDelete={handleDelete} onChange={handleChange} />
+      <Layer onClick={handleAdd} objectTree={objectTree} />
       <Users ydoc={ydoc} users={users} />
     </Flex>
   );

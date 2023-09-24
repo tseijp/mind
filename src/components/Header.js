@@ -1,10 +1,27 @@
 import * as React from "react";
+import { useState } from "react";
 import { Flex } from "./Flex";
 import { LayerItemIcon } from "./LayerItemIcon";
 import { LayerItemField } from "./LayerItemField";
+import { useCall, useOnce } from "../hooks";
+
+
+const { floor, random } = Math;
 
 export const Header = (props) => {
-  const { children, onClick, onDelete } = props;
+  const { children, onClick, onDelete, onChange } = props;
+  const [name, set] = useState(INIT_USERNAME);
+  const handleChange = useCall((value) => {
+    set((prev) => {
+      if (prev !== value) onChange(value);
+      return value;
+    });
+  });
+
+  useOnce(() => {
+    onChange(name);
+    return true;
+  });
 
   return (
     <Flex
@@ -26,7 +43,42 @@ export const Header = (props) => {
         <LayerItemIcon active children="-" />
         <LayerItemField>DELETE</LayerItemField>
       </div>
+      <div onClick={onDelete} style={{ display: "flex" }}>
+        <LayerItemIcon active children="-" />
+        <LayerItemField onChange={handleChange}>{name}</LayerItemField>
+      </div>
       {children}
     </Flex>
   );
 };
+
+const USERNAME = [
+  "Abe",
+  "Baba",
+  "Chiba",
+  "Daito",
+  "Eto",
+  "Fukuda",
+  "Goto",
+  "Hara",
+  "Ito",
+  "Jinno",
+  "Kato",
+  "Lino",
+  "Mori",
+  "Nakamura",
+  "Oda",
+  "Pinto",
+  "Ryu",
+  "Sato",
+  "Takahashi",
+  "Ueda",
+  "Vega",
+  "Watanabe",
+  "Xavier",
+  "Yamada",
+  "Zatoichi",
+];
+
+const INIT_USERNAME =
+  USERNAME[floor(random() * USERNAME.length)] + floor(random() * 1000);
